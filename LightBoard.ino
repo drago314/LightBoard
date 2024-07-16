@@ -17,6 +17,11 @@
 #define COLOR_SATURATION 1
 #define COLOR_VALUE 1
 
+#define SPEED_COLOR_SHIFT_DRAWBACK 0.125 // how fast speed dial reduces color shift
+#define COLOR_SHIFT_INCREASE_SPEED 0.25 // how fast delay dial changes color shift
+#define COLOR_SHIFT_ZERO_OFFSET 1
+#define INITIAL_COLOR_INCREASE_SPEED 0.1
+
 CRGB leds[NUM_LEDS];     // Define the LED array
 RotaryEncoder speedEncoder(POSITION_ROTARY_PIN_1, POSITION_ROTARY_PIN_2, RotaryEncoder::LatchMode::TWO03);  
 RotaryEncoder delayEncoder(SHIFT_ROTARY_PIN_1, SHIFT_ROTARY_PIN_2, RotaryEncoder::LatchMode::TWO03);  
@@ -104,27 +109,37 @@ double doubleModulo(double val, int mod)
 {
   while (val >= mod)
     val -= mod;
+  while (val < 0)
+    val += mod;
   return val;
+}
+
+int intModulo(int val, int mod)
+{
+  val = val % mod;
+  return val >= 0 ? val : val + mod;
 }
 
 void fillLEDArray() {  
   for (int y = 0; y < NUM_CIRCLES_HEIGHT; y++) {
     for (int x = 0; x < NUM_CIRCLES_WIDTH; x++) {
+      int litPos = (int) (currentDelay * (x + y) + currentPos);
+      litPos = intModulo(litPos, 20);
+      int distanceFromTop = litPos < 10 ? litPos : 20 - litPos;
+      distanceFromTop += COLOR_SHIFT_ZERO_OFFSET;
       for (int i = 0; i < NUM_LEDS_CIRCLE; i++) {
-        int pos = NUM_LEDS_CIRCLE * (NUM_CIRCLES_WIDTH * y + x) + i;
-        int litPos = (int) (currentDelay * (x + y) + currentPos);
-        litPos = litPos % 20;
+        int ledPos = NUM_LEDS_CIRCLE * (NUM_CIRCLES_WIDTH * y + x) + i;
         if (abs(litPos - i) <= NUM_LEDS_ON || abs(litPos + NUM_LEDS_CIRCLE - i) <= NUM_LEDS_ON || abs(litPos - NUM_LEDS_CIRCLE - i) <= NUM_LEDS_ON) {
           //convert HSV (which is good for making rainbow) to RGB
           hsv initialColor;
-          initialColor.h = currentHue + colorShift * (x + y);
+          initialColor.h = doubleModulo(currentHue + colorShift * distanceFromTop, 360);
           initialColor.s = COLOR_SATURATION;
           initialColor.v = COLOR_VALUE;
           rgb color = hsv2rgb(initialColor);
-          leds[pos] = CRGB(color.r * 255, color.g * 255, color.b * 255);
+          leds[ledPos] = CRGB(color.r * 255, color.g * 255, color.b * 255);
         }
         else {
-          leds[pos] = CRGB::Black;
+          leds[ledPos] = CRGB::Black;
         }
       }
     }
@@ -152,12 +167,14 @@ void loop() {
     lastSpeedEncoder = speedEncoder.getPosition();
     int dir = (int)speedEncoder.getDirection();
     currentPos += -dir * 1;
-    if (colorShift > 0.5)
-      colorShift -= 0.5;
-    else if (colorShift < -0.5)
-      colorShift += 0.5;
+    if (colorShift > SPEED_COLOR_SHIFT_DRAWBACK)
+      colorShift -= SPEED_COLOR_SHIFT_DRAWBACK;
+    else if (colorShift < -SPEED_COLOR_SHIFT_DRAWBACK)
+      colorShift += SPEED_COLOR_SHIFT_DRAWBACK;
     else
       colorShift = 0;
+    Serial.print("Color Shift: ");
+    Serial.println(colorShift);
   }
 
   // Delay
@@ -168,19 +185,28 @@ void loop() {
     int dir = (int)delayEncoder.getDirection();
     currentPos += -dir * 1;
     currentDelay += -dir * 0.5;
-    colorShift += dir * 1;
+    colorShift += dir * COLOR_SHIFT_INCREASE_SPEED;
+    currentHue += dir * INITIAL_COLOR_INCREASE_SPEED;
+    Serial.print("Color Shift: ");
+    Serial.println(colorShift);
+    Serial.print("Hue: ");
+    Serial.println(currentHue);
   }
 
   // Color
   if (lastColorEncoder != colorEncoder.getPosition())
   {
+    Serial.println("Color Encoder Moved");
     lastColorEncoder = colorEncoder.getPosition();
-    currentHue = (colorEncoder.getPosition() * 10) % 360;
+    int dir = (int)colorEncoder.getDirection();
+    currentHue += dir * 10;
+    Serial.print("Hue: ");
+    Serial.println(currentHue);
   }
 
   currentPos = doubleModulo(currentPos, NUM_LEDS_CIRCLE);
   currentDelay = doubleModulo(currentDelay, NUM_LEDS_CIRCLE);
-  colorShift = doubleModulo(colorShift, 360);
-  
+  currentHue = doubleModulo(currentHue, 360);
+
   fillLEDArray();
 }
