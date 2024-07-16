@@ -21,6 +21,8 @@
 #define COLOR_SHIFT_INCREASE_SPEED 0.25 // how fast delay dial changes color shift
 #define COLOR_SHIFT_ZERO_OFFSET 1
 #define INITIAL_COLOR_INCREASE_SPEED 0.1
+#define MAX_COLOR_SHIFT 12
+#define HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST 2
 
 CRGB leds[NUM_LEDS];     // Define the LED array
 RotaryEncoder speedEncoder(POSITION_ROTARY_PIN_1, POSITION_ROTARY_PIN_2, RotaryEncoder::LatchMode::TWO03);  
@@ -186,7 +188,21 @@ void loop() {
     currentPos += -dir * 1;
     currentDelay += -dir * 0.5;
     colorShift += dir * COLOR_SHIFT_INCREASE_SPEED;
-    currentHue += dir * INITIAL_COLOR_INCREASE_SPEED;
+
+    double currentHueChange = dir * INITIAL_COLOR_INCREASE_SPEED * HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST;
+    if (colorShift > MAX_COLOR_SHIFT)
+    {
+      colorShift = MAX_COLOR_SHIFT;
+      currentHueChange /= HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST;
+    }
+    else if (colorShift < -MAX_COLOR_SHIFT)
+    {
+      colorShift = -MAX_COLOR_SHIFT;
+      currentHueChange /= HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST;
+    }
+    
+    currentHue += currentHueChange;
+
     Serial.print("Color Shift: ");
     Serial.println(colorShift);
     Serial.print("Hue: ");
