@@ -17,6 +17,10 @@
 #define COLOR_SATURATION 1
 #define COLOR_VALUE 1
 
+#define MOVEMENT_SENSITIVITY 1
+#define DELAY_SENSITIVITY 0.5
+#define COLOR_SENSITIVITY 10
+
 #define SPEED_COLOR_SHIFT_DRAWBACK 0.125 // how fast speed dial reduces color shift
 #define COLOR_SHIFT_INCREASE_SPEED 0.25 // how fast delay dial changes color shift
 #define COLOR_SHIFT_ZERO_OFFSET 1
@@ -168,7 +172,7 @@ void loop() {
     Serial.println("Speed Encoder Moved");
     lastSpeedEncoder = speedEncoder.getPosition();
     int dir = (int)speedEncoder.getDirection();
-    currentPos += -dir * 1;
+    currentPos += -dir * MOVEMENT_SENSITIVITY;
     if (colorShift > SPEED_COLOR_SHIFT_DRAWBACK)
       colorShift -= SPEED_COLOR_SHIFT_DRAWBACK;
     else if (colorShift < -SPEED_COLOR_SHIFT_DRAWBACK)
@@ -185,8 +189,8 @@ void loop() {
     Serial.println("Delay Encoder Moved");
     lastDelayEncoder = delayEncoder.getPosition();
     int dir = (int)delayEncoder.getDirection();
-    currentPos += -dir * 1;
-    currentDelay += -dir * 0.5;
+    currentPos += -dir * MOVEMENT_SENSITIVITY;
+    currentDelay += -dir * DELAY_SENSITIVITY;
     colorShift += dir * COLOR_SHIFT_INCREASE_SPEED;
 
     double currentHueChange = dir * INITIAL_COLOR_INCREASE_SPEED * HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST;
@@ -215,7 +219,7 @@ void loop() {
     Serial.println("Color Encoder Moved");
     lastColorEncoder = colorEncoder.getPosition();
     int dir = (int)colorEncoder.getDirection();
-    currentHue += dir * 10;
+    currentHue += dir * COLOR_SENSITIVITY;
     Serial.print("Hue: ");
     Serial.println(currentHue);
   }
