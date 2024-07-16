@@ -20,9 +20,9 @@
 #define SPEED_COLOR_SHIFT_DRAWBACK 0.125 // how fast speed dial reduces color shift
 #define COLOR_SHIFT_INCREASE_SPEED 0.25 // how fast delay dial changes color shift
 #define COLOR_SHIFT_ZERO_OFFSET 1
-#define INITIAL_COLOR_INCREASE_SPEED 0.1
+#define INITIAL_COLOR_INCREASE_SPEED 0.1 // how fast the underlying initial color changes with color shift
 #define MAX_COLOR_SHIFT 12
-#define HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST 2
+#define HIT_MAX_INITIAL_COLOR_INCREASE_SPEED_BOOST 2 // after color shift has hit the max how much faster the inital color changes
 
 CRGB leds[NUM_LEDS];     // Define the LED array
 RotaryEncoder speedEncoder(POSITION_ROTARY_PIN_1, POSITION_ROTARY_PIN_2, RotaryEncoder::LatchMode::TWO03);  
